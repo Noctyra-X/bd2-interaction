@@ -103,7 +103,13 @@ function setGroup(g){
 }
 function onReady(p){
   skeleton=p.skeleton; state=p.animationState; boneNames=skeleton.data.bones.map(b=>b.name);
-  const groups=[...new Set(config.map(c=>c.group))].sort((a,b)=>a-b);
+  // 把配置的 mix{g}_{id} 解析成真实动画名(带 _1/_2 后缀);没有对应动画的区域标记为不可用
+  const _anims=skeleton.data.animations;
+  for(const e of config){
+    const a=_anims.find(x=>x.name===e.anim)||_anims.find(x=>x.name===e.anim+"_1")||_anims.find(x=>x.name.startsWith(e.anim+"_"));
+    e._anim=a?a.name:null;
+  }
+  const groups=[...new Set(config.filter(c=>c._anim).map(c=>c.group))].sort((a,b)=>a-b);
   $("#groups").innerHTML=groups.map(g=>`<button data-g="${g}" class="${g===1?'on':''}">${g}</button>`).join('');
   $("#groups").onclick=e=>{const b=e.target.closest('button'); if(b) setGroup(+b.dataset.g);};
   setGroup(1);
@@ -120,20 +126,20 @@ function findPointBone(g,id,kind){
 }
 function zoneWorld(e){ const b=findPointBone(e.group,e.id,e.kind); if(!b) return null;
   return {x:b.worldX,y:b.worldY,w:(e.rect&&e.rect.w)||150,h:(e.rect&&e.rect.h)||150}; }
-function curEntries(){ return config.filter(e=>e.group===curGroup && (dragMode?e.kind==='drag':e.kind==='touch')); }
+function curEntries(){ return config.filter(e=>e._anim && e.group===curGroup && (dragMode?e.kind==='drag':e.kind==='touch')); }
 function onTap(ev){
   const cv=player.canvas,r=cv.getBoundingClientRect(),cam=player.sceneRenderer.camera;
   const w=cam.screenToWorld(new spine.Vector3(ev.clientX-r.left,ev.clientY-r.top,0),cv.clientWidth,cv.clientHeight);
-  let best=null,ba=Infinity;
+  let best=null,bd=Infinity;
   for(const e of curEntries()){ const z=zoneWorld(e); if(!z) continue;
-    if(Math.abs(w.x-z.x)<=z.w/2 && Math.abs(w.y-z.y)<=z.h/2){ const a=z.w*z.h; if(a<ba){ba=a;best=e;} } }
+    const d=(w.x-z.x)*(w.x-z.x)+(w.y-z.y)*(w.y-z.y); if(d<bd){bd=d;best=e;} }  // 点哪就触发最近的反应(必有反应)
   if(best) fire(best);
 }
 function fire(e){
-  const idle="idle"+e.group, data=skeleton.data, useIdle=data.findAnimation(idle)?idle:"idle1";
-  if(data.findAnimation(e.anim)){ state.setAnimation(0,useIdle,true); state.setAnimation(1,e.anim,false);
-    $("#last").textContent=`▶ ${e.anim} · 组${e.group} ${e.kind}`; }
-  else $("#last").textContent=`(无 ${e.anim})`;
+  const data=skeleton.data, idle="idle"+e.group, useIdle=data.findAnimation(idle)?idle:"idle1";
+  if(e._anim){ state.setAnimation(0,useIdle,true); state.setAnimation(1,e._anim,false);
+    $("#last").textContent=`▶ ${e._anim} · 组${e.group} ${e.kind}`; window.__lastAnim=e._anim; }
+  else { $("#last").textContent=`(无反应)`; window.__lastAnim=null; }
 }
 function loop(){
   const cv=$("#overlay"),st=$("#stage"); if(cv.width!==st.clientWidth) cv.width=st.clientWidth; if(cv.height!==st.clientHeight) cv.height=st.clientHeight;
