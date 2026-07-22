@@ -115,7 +115,14 @@ function onReady(p){
   setGroup(1);
   $("#hud").textContent="点立绘不同部位触发反应";
   p.canvas.style.cursor='pointer';
-  p.canvas.addEventListener('pointerdown', onTap);
+  // 关键:spine-player 自带"点画面=暂停",不拦掉的话手机一点就卡成静止图。
+  // 在 #stage 捕获阶段拦截 canvas 上的指针事件(spine-player 就收不到,不会暂停),自己触发反应。
+  for(const ev of ["pointerdown","pointerup","pointermove","mousedown","mouseup","click"]){
+    $("#stage").addEventListener(ev, e=>{
+      if(e.target && e.target.tagName==="CANVAS"){ e.stopPropagation(); if(ev==="pointerdown") onTap(e); }
+    }, true);
+  }
+  try{ if(player.play) player.play(); }catch(_){}   // spine-player 默认加载后暂停,主动开播,否则是静止图
   requestAnimationFrame(loop);
 }
 function findPointBone(g,id,kind){
@@ -137,7 +144,9 @@ function onTap(ev){
 }
 function fire(e){
   const data=skeleton.data, idle="idle"+e.group, useIdle=data.findAnimation(idle)?idle:"idle1";
-  if(e._anim){ state.setAnimation(0,useIdle,true); state.setAnimation(1,e._anim,false);
+  if(e._anim){
+    try{ if(player.paused && player.play) player.play(); }catch(_){}   // 确保没被暂停
+    state.setAnimation(0,useIdle,true); state.setAnimation(1,e._anim,false);
     $("#last").textContent=`▶ ${e._anim} · 组${e.group} ${e.kind}`; window.__lastAnim=e._anim; }
   else { $("#last").textContent=`(无反应)`; window.__lastAnim=null; }
 }
