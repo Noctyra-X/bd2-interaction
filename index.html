@@ -25,6 +25,7 @@
     <label class="tg"><input type="checkbox" id="showzones" checked>区</label>
     <label class="tg"><input type="checkbox" id="dragmode">拖拽渐进</label>
     <button id="reset" style="padding:5px 10px;border-radius:7px;border:1px solid #2e2e42;background:transparent;color:#9a9ab0;font-size:12px">复位</button>
+    <button id="colorbtn" style="display:none;padding:5px 10px;border-radius:7px;border:1px solid #7b5cff;background:transparent;color:#b9a6ff;font-size:12px">配色</button>
   </div>
   <div id="stage">
     <div id="player"></div><canvas id="overlay"></canvas>
@@ -34,7 +35,7 @@
 <script src="spine-player.js"></script>
 <script>
 const $=s=>document.querySelector(s);
-let player, skeleton, state, config=[], scenes=[], cur=null, curGroup=1, showZones=true, dragMode=false, manualCam=null, boneNames=[], userZoom=1, userPanX=0, userPanY=0, pinch=null, listenersReady=false, clickCounts={}, revealed=null, revealTimer=null, hideUntilRevealed=new Set();
+let player, skeleton, state, config=[], scenes=[], cur=null, curGroup=1, showZones=true, dragMode=false, manualCam=null, boneNames=[], userZoom=1, userPanX=0, userPanY=0, pinch=null, listenersReady=false, clickCounts={}, revealed=null, revealTimer=null, hideUntilRevealed=new Set(), skinVariantCache={}, colorVariants=[], colorIdx=0, curIdle="idle1";
 
 fetch('manifest.json').then(r=>r.json()).then(m=>{
   scenes=m;
@@ -48,7 +49,7 @@ $("#dragmode").onchange=e=>dragMode=e.target.checked;
 function loadScene(n){
   cur=scenes.find(s=>s.n===n); if(!cur) return;
   $("#hud").textContent="加载中…"; $("#last").textContent="";
-  manualCam=null; curGroup=1; userZoom=1; userPanX=0; userPanY=0; pinch=null; clickCounts={}; revealed=null; clearTimeout(revealTimer);
+  manualCam=null; curGroup=1; userZoom=1; userPanX=0; userPanY=0; pinch=null; clickCounts={}; revealed=null; clearTimeout(revealTimer); colorIdx=0; skinVariantCache={}; colorVariants=[];
   if(player){ try{player.dispose();}catch(e){} player=null; }
   $("#player").innerHTML="";
   fetch(cur.config).then(r=>r.json()).then(c=>{ config=c; makePlayer(); });
@@ -105,12 +106,56 @@ function ensureListeners(){
     if(player&&manualCam) anchorZoom(userZoom*(e.deltaY<0?1.1:0.9), s2w(e.clientX,e.clientY), e.clientX, e.clientY); }, {passive:false});
   const rb=$("#reset"); if(rb) rb.onclick=resetView;
 }
+// 一组皮肤(可选是否含 default)在 setup 姿势下的包围盒(剔除 >15000px 离群件)
+function bboxOfSkins(names, withDefault){
+  const data=skeleton.data, sk=new spine.Skin('__x');
+  if(withDefault){ const def=data.findSkin('default'); if(def) sk.addSkin(def); }
+  for(const nm of names){ const s=data.findSkin(nm); if(s) sk.addSkin(s); }
+  skeleton.setSkin(sk); skeleton.setSlotsToSetupPose(); skeleton.setToSetupPose(); skeleton.updateWorldTransform();
+  const wv=new Array(8192); let X0=1e18,Y0=1e18,X1=-1e18,Y1=-1e18;
+  for(const slot of skeleton.slots){ const at=slot.getAttachment&&slot.getAttachment(); if(!at) continue; let n=0;
+    if(at instanceof spine.RegionAttachment){at.computeWorldVertices(slot,wv,0,2);n=8;}
+    else if(at instanceof spine.MeshAttachment){at.computeWorldVertices(slot,0,at.worldVerticesLength,wv,0,2);n=at.worldVerticesLength;}
+    else continue;
+    for(let i=0;i<n;i+=2){const x=wv[i],y=wv[i+1];if(Math.abs(x)>15000||Math.abs(y)>15000)continue;if(x<X0)X0=x;if(x>X1)X1=x;if(y<Y0)Y0=y;if(y>Y1)Y1=y;}}
+  return X0<=X1?[X0,Y0,X1,Y1]:null;
+}
+function bArea(b){ return b?(b[2]-b[0])*(b[3]-b[1]):0; }
+function bboxIoU(a,b){ if(!a||!b) return 0;
+  const ix=Math.max(0,Math.min(a[2],b[2])-Math.max(a[0],b[0])), iy=Math.max(0,Math.min(a[3],b[3])-Math.max(a[1],b[1]));
+  const inter=ix*iy; return inter/Math.max(1,bArea(a)+bArea(b)-inter);
+}
+// 判定"双配色变体":≥2 个皮肤各自(不含 default)都几乎覆盖整个角色、且相互重叠(如 Angelica 正常色 vs 霓虹色两套全身)。
+// 关键:必须算皮肤"自己"的附件,不能算 default+皮肤——否则 default 里若含身体(如 Justia)会把每个皮肤 bbox 都撑成全身而误判。
+function skinSlotCount(skinName){   // 该皮肤自己有附件的插槽数(不含 default)
+  const s=skeleton.data.findSkin(skinName); if(!s) return 0; const A=s.attachments; let c=0;
+  if(Array.isArray(A)) for(let i=0;i<A.length;i++){ if(A[i]&&Object.keys(A[i]).length) c++; }
+  return c;
+}
+function detectColorVariants(matched){
+  if(matched.length<2) return [];
+  // 每个变体本身要覆盖足够多部件(全身版,≥50 件)——排除"稀疏/道具/附加"皮肤(如 Justia 的 18/20 件,那种要叠加才完整)
+  const big=matched.filter(s=>skinSlotCount(s.name)>=50);
+  if(big.length<2) return [];
+  const b0=bboxOfSkins([big[0].name],false), b1=bboxOfSkins([big[1].name],false);
+  if(bboxIoU(b0,b1)>0.6) return big.map(s=>s.name);   // 各自占同一视觉空间 → 配色变体,只显示选中的一套
+  return [];
+}
 function combineSkin(anim){
+  colorVariants=[];   // 先清空,避免残留上个场景/组的配色变体
   const data=skeleton.data, base=(anim.match(/^[a-zA-Z]+[0-9]*/)||[anim])[0];
   const named=data.skins.filter(s=>s.name!=='default'); if(!named.length) return;
-  let matched=named.filter(s=>s.name.indexOf(base)===0); if(!matched.length) matched=named;
+  let matched=named.filter(s=>s.name.indexOf(base)===0);
+  const prefixMatched=matched.length>0;   // 只有动画名真前缀匹配到具名皮肤才可能是"配色变体";回退到全部皮肤的情况一律全叠(避免误判 Liberta 的 skin1_off/skin2_on)
+  if(!matched.length) matched=named;
+  if(prefixMatched){
+    if(!(base in skinVariantCache)) skinVariantCache[base]=detectColorVariants(matched);
+    colorVariants=skinVariantCache[base];
+  }
   const sk=new spine.Skin('__c'); const def=data.findSkin('default'); if(def) sk.addSkin(def);
-  for(const s of matched) sk.addSkin(s); skeleton.setSkin(sk); skeleton.setSlotsToSetupPose();
+  if(colorVariants.length){ const s=data.findSkin(colorVariants[colorIdx%colorVariants.length]); if(s) sk.addSkin(s); }   // 配色变体:只用选中的一套
+  else for(const s of matched) sk.addSkin(s);                                                                             // 互补分层:全叠
+  skeleton.setSkin(sk); skeleton.setSlotsToSetupPose();
 }
 function robustViewport(animName){
   const data=skeleton.data, anim=data.findAnimation(animName), dur=anim?anim.duration:0;
@@ -136,7 +181,8 @@ function robustViewport(animName){
 function setGroup(g){
   curGroup=g; revealed=null; const data=skeleton.data, idle="idle"+g;
   const useIdle=data.findAnimation(idle)?idle:(data.findAnimation("idle1")?"idle1":data.animations[0].name);
-  combineSkin(useIdle);
+  combineSkin(useIdle); curIdle=useIdle;
+  const cb=$("#colorbtn"); if(cb) cb.style.display=colorVariants.length?'':'none';   // 有配色变体才显示「配色」按钮
   const vp=robustViewport(useIdle); if(vp) manualCam={cx:vp.x+vp.w/2,cy:vp.y+vp.h/2,w:vp.w,h:vp.h};
   state.clearTracks(); skeleton.setToSetupPose(); state.setAnimation(0,useIdle,true);
   document.querySelectorAll('#groups button').forEach(b=>b.classList.toggle('on',+b.dataset.g===g));
@@ -158,6 +204,8 @@ function onReady(p){
   const groups=[...new Set(config.filter(c=>c._plays&&c._plays.length).map(c=>c.group))].sort((a,b)=>a-b);
   $("#groups").innerHTML=groups.map(g=>`<button data-g="${g}" class="${g===1?'on':''}">${g}</button>`).join('');
   $("#groups").onclick=e=>{const b=e.target.closest('button'); if(b) setGroup(+b.dataset.g);};
+  $("#colorbtn").onclick=()=>{ if(!colorVariants.length) return; colorIdx++; combineSkin(curIdle); state.setAnimation(0,curIdle,true);
+    $("#last").textContent=`配色 ${(colorIdx%colorVariants.length)+1}/${colorVariants.length}`; };   // 切换正常色/霓虹色
   setGroup(1);
   $("#hud").textContent="点立绘不同部位触发反应";
   p.canvas.style.cursor='pointer';
