@@ -23,7 +23,8 @@
     <select id="scene"></select>
     <span id="groups"></span>
     <label class="tg"><input type="checkbox" id="showzones" checked>区</label>
-    <label class="tg"><input type="checkbox" id="dragmode">drag</label>
+    <label class="tg"><input type="checkbox" id="dragmode">拖拽</label>
+    <button id="reset" style="padding:5px 10px;border-radius:7px;border:1px solid #2e2e42;background:transparent;color:#9a9ab0;font-size:12px">复位</button>
   </div>
   <div id="stage">
     <div id="player"></div><canvas id="overlay"></canvas>
@@ -33,7 +34,7 @@
 <script src="spine-player.js"></script>
 <script>
 const $=s=>document.querySelector(s);
-let player, skeleton, state, config=[], scenes=[], cur=null, curGroup=1, showZones=true, dragMode=false, manualCam=null, boneNames=[];
+let player, skeleton, state, config=[], scenes=[], cur=null, curGroup=1, showZones=true, dragMode=false, manualCam=null, boneNames=[], userZoom=1, userPanX=0, userPanY=0, pinch=null, listenersReady=false;
 
 fetch('manifest.json').then(r=>r.json()).then(m=>{
   scenes=m;
@@ -47,7 +48,7 @@ $("#dragmode").onchange=e=>dragMode=e.target.checked;
 function loadScene(n){
   cur=scenes.find(s=>s.n===n); if(!cur) return;
   $("#hud").textContent="加载中…"; $("#last").textContent="";
-  manualCam=null; curGroup=1;
+  manualCam=null; curGroup=1; userZoom=1; userPanX=0; userPanY=0; pinch=null;
   if(player){ try{player.dispose();}catch(e){} player=null; }
   $("#player").innerHTML="";
   fetch(cur.config).then(r=>r.json()).then(c=>{ config=c; makePlayer(); });
@@ -62,8 +63,41 @@ function makePlayer(){
 function onUpdate(){
   if(!manualCam||!player||!player.sceneRenderer) return;
   const cam=player.sceneRenderer.camera, vw=cam.viewportWidth||1, vh=cam.viewportHeight||1;
-  cam.zoom=Math.max(manualCam.w/vw, manualCam.h/vh)*1.12;
-  cam.position.x=manualCam.cx; cam.position.y=manualCam.cy; cam.position.z=0; cam.update();
+  cam.zoom=Math.max(manualCam.w/vw, manualCam.h/vh)*1.12/userZoom;   // 双指捏合改 userZoom(>1 = 放大)
+  cam.position.x=manualCam.cx+userPanX; cam.position.y=manualCam.cy+userPanY; cam.position.z=0; cam.update();
+}
+function resetView(){ userZoom=1; userPanX=0; userPanY=0; }
+// 事件只装一次(否则每次切场景都叠一层,会导致一点触发多次反应)
+function ensureListeners(){
+  if(listenersReady) return; listenersReady=true;
+  const stage=$("#stage");
+  // 拦 spine-player 的"点画面=暂停";单指点 canvas → 触发反应
+  for(const ev of ["pointerdown","pointerup","pointercancel","pointermove","mousedown","mouseup","click"]){
+    stage.addEventListener(ev, e=>{
+      if(e.target && e.target.tagName==="CANVAS"){ e.stopPropagation();
+        if(pinch) return;
+        if(ev==="pointerdown") onPress(e);
+        else if(ev==="pointerup"||ev==="pointercancel") onRelease(e); }
+    }, true);
+  }
+  const D=t=>Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+  const M=t=>({x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2});
+  stage.addEventListener('touchstart', e=>{
+    if(e.touches.length===2){ e.preventDefault(); const m=M(e.touches);
+      pinch={d:D(e.touches), z:userZoom, mx:m.x, my:m.y, px:userPanX, py:userPanY}; }
+  }, {passive:false});
+  stage.addEventListener('touchmove', e=>{
+    if(pinch && e.touches.length===2 && player){ e.preventDefault();
+      const m=M(e.touches), cam=player.sceneRenderer.camera;
+      userZoom=Math.min(6, Math.max(0.5, pinch.z*D(e.touches)/pinch.d));   // 捏合缩放
+      const wpp=cam.zoom*(cam.viewportWidth/player.canvas.clientWidth);
+      userPanX=pinch.px-(m.x-pinch.mx)*wpp; userPanY=pinch.py+(m.y-pinch.my)*wpp;   // 双指拖动
+    }
+  }, {passive:false});
+  stage.addEventListener('touchend', e=>{ if(e.touches.length<2) pinch=null; });
+  stage.addEventListener('wheel', e=>{ e.preventDefault();   // 桌面滚轮缩放
+    userZoom=Math.min(6, Math.max(0.5, userZoom*(e.deltaY<0?1.1:0.9))); }, {passive:false});
+  const rb=$("#reset"); if(rb) rb.onclick=resetView;
 }
 function combineSkin(anim){
   const data=skeleton.data, base=(anim.match(/^[a-zA-Z]+[0-9]*/)||[anim])[0];
@@ -105,9 +139,9 @@ function onReady(p){
   skeleton=p.skeleton; state=p.animationState; boneNames=skeleton.data.bones.map(b=>b.name);
   // 把配置的 mix{g}_{id} 解析成真实动画名(带 _1/_2 后缀);没有对应动画的区域标记为不可用
   const _anims=skeleton.data.animations;
-  for(const e of config){
-    const a=_anims.find(x=>x.name===e.anim)||_anims.find(x=>x.name===e.anim+"_1")||_anims.find(x=>x.name.startsWith(e.anim+"_"));
-    e._anim=a?a.name:null;
+  const resolve=nm=>{ if(!nm) return null; const a=_anims.find(x=>x.name===nm)||_anims.find(x=>x.name===nm+"_1")||_anims.find(x=>x.name.startsWith(nm+"_")); return a?a.name:null; };
+  for(const e of config){   // mix{g}_{id} + 拖拽/长按的 loop/success/fail 全解析成真实动画名(带 _1 等后缀)
+    e._anim=resolve(e.anim); e._loop=resolve(e.loop); e._success=resolve(e.success); e._fail=resolve(e.fail);
   }
   const groups=[...new Set(config.filter(c=>c._anim).map(c=>c.group))].sort((a,b)=>a-b);
   $("#groups").innerHTML=groups.map(g=>`<button data-g="${g}" class="${g===1?'on':''}">${g}</button>`).join('');
@@ -115,13 +149,7 @@ function onReady(p){
   setGroup(1);
   $("#hud").textContent="点立绘不同部位触发反应";
   p.canvas.style.cursor='pointer';
-  // 关键:spine-player 自带"点画面=暂停",不拦掉的话手机一点就卡成静止图。
-  // 在 #stage 捕获阶段拦截 canvas 上的指针事件(spine-player 就收不到,不会暂停),自己触发反应。
-  for(const ev of ["pointerdown","pointerup","pointermove","mousedown","mouseup","click"]){
-    $("#stage").addEventListener(ev, e=>{
-      if(e.target && e.target.tagName==="CANVAS"){ e.stopPropagation(); if(ev==="pointerdown") onTap(e); }
-    }, true);
-  }
+  ensureListeners();   // 点击拦截 + 双指缩放/拖动 + 滚轮 + 复位(只装一次)
   try{ if(player.play) player.play(); }catch(_){}   // spine-player 默认加载后暂停,主动开播,否则是静止图
   requestAnimationFrame(loop);
 }
@@ -134,13 +162,34 @@ function findPointBone(g,id,kind){
 function zoneWorld(e){ const b=findPointBone(e.group,e.id,e.kind); if(!b) return null;
   return {x:b.worldX,y:b.worldY,w:(e.rect&&e.rect.w)||150,h:(e.rect&&e.rect.h)||150}; }
 function curEntries(){ return config.filter(e=>e._anim && e.group===curGroup && (dragMode?e.kind==='drag':e.kind==='touch')); }
-function onTap(ev){
+function nearestZone(ev){
   const cv=player.canvas,r=cv.getBoundingClientRect(),cam=player.sceneRenderer.camera;
   const w=cam.screenToWorld(new spine.Vector3(ev.clientX-r.left,ev.clientY-r.top,0),cv.clientWidth,cv.clientHeight);
   let best=null,bd=Infinity;
   for(const e of curEntries()){ const z=zoneWorld(e); if(!z) continue;
-    const d=(w.x-z.x)*(w.x-z.x)+(w.y-z.y)*(w.y-z.y); if(d<bd){bd=d;best=e;} }  // 点哪就触发最近的反应(必有反应)
-  if(best) fire(best);
+    const d=(w.x-z.x)*(w.x-z.x)+(w.y-z.y)*(w.y-z.y); if(d<bd){bd=d;best=e;} }  // 点哪就触发最近的
+  return best;
+}
+// 点触:点一下播 mix 反应。拖拽/长按:按住时循环播 loop(动画随按住持续渐进),松手够 hold 秒→success(完成,如脱丝袜),太早松→fail
+let heldZone=null, heldStart=0;
+function isDragZone(e){ return e.kind==='drag' || e.action===1 || !!e._loop || !!e._success; }
+function idleName(g){ const n="idle"+g; return skeleton.data.findAnimation(n)?n:"idle1"; }
+function onPress(ev){ const e=nearestZone(ev); if(!e) return; if(isDragZone(e)) startHold(e); else fire(e); }
+function startHold(e){
+  heldZone=e; heldStart=performance.now();
+  try{ if(player.paused&&player.play) player.play(); }catch(_){}
+  state.setAnimation(0,idleName(e.group),true);
+  const h=e._loop||e._anim; if(h) state.setAnimation(1,h,true);   // 按住=循环播,视觉上持续渐进
+  $("#last").textContent=`⭯ 按住/拖动… ${h||''}`; window.__holding=true; window.__lastAnim=h||null;
+}
+function onRelease(){
+  if(!heldZone) return; const e=heldZone; heldZone=null; window.__holding=false;
+  const held=(performance.now()-heldStart)/1000, need=e.hold||0.45;
+  const done=(a,tag)=>{ state.setAnimation(0,idleName(e.group),true); state.setAnimation(1,a,false); $("#last").textContent=tag; window.__lastAnim=a; };
+  if(held>=need && e._success) done(e._success,`✔ ${e._success}`);
+  else if(held<need && e._fail) done(e._fail,`✘ 松太早 · ${e._fail}`);
+  else if(e._success) done(e._success,`✔ ${e._success}`);
+  else { state.setAnimation(0,idleName(e.group),true); state.setEmptyAnimation(1,0.15); $("#last").textContent="(回到待机)"; }
 }
 function fire(e){
   const data=skeleton.data, idle="idle"+e.group, useIdle=data.findAnimation(idle)?idle:"idle1";
