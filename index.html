@@ -173,7 +173,10 @@ function isOnScreen(e){ const b=findPointBone(e.group,e.id,e.kind); if(!b||!play
   return isFinite(s.x)&&s.x>=0&&s.x<=pc.clientWidth&&s.y>=0&&s.y<=pc.clientHeight; }
 function curEntries(){
   if(revealed){ const r=config.filter(e=>animated(e)&&revealed.has(e.group+"_"+e.id)); if(r.length) return r; }   // 解锁后:只显示被解锁的隐藏点
-  return config.filter(e=>animated(e) && e.group===curGroup && (dragMode?isDragZone(e):!isDragZone(e)) && !hideUntilRevealed.has(e.group+"_"+e.id));  // 默认:点触点,且排除"未解锁的隐藏点"
+  const vis=e=>animated(e)&&e.group===curGroup&&!hideUntilRevealed.has(e.group+"_"+e.id);
+  let es=config.filter(e=>vis(e)&&(dragMode?isDragZone(e):!isDragZone(e)));   // 默认:点触点(排除未解锁的隐藏点)
+  if(!es.length) es=config.filter(vis);   // 该组在当前模式下没点(如只有渐进拖拽)→ 显示该组全部,避免空组
+  return es;
 }
 function nearestZone(ev){
   const cv=player.canvas,r=cv.getBoundingClientRect(),cam=player.sceneRenderer.camera,W=cv.clientWidth,H=cv.clientHeight;
@@ -185,10 +188,23 @@ function nearestZone(ev){
   return best;
 }
 // 点触:点一下播 mix 反应。拖拽/长按:按住时循环播 loop(动画随按住持续渐进),松手够 hold 秒→success(完成,如脱丝袜),太早松→fail
-let heldZone=null, heldStart=0;
+let heldZone=null, heldStart=0, stackKey=null, stackIdx=0;
 function isDragZone(e){ return !!(e._loop || e._success); }   // 只有真·渐进拖拽(有 loop/success,如 dating18)才走"按住"流程;其余走 fire() 点触循环
 function idleName(g){ const n="idle"+g; return skeleton.data.findAnimation(n)?n:"idle1"; }
-function onPress(ev){ const e=nearestZone(ev); if(!e) return; if(isDragZone(e)) startHold(e); else fire(e); }
+// 多个交互点常精确重叠在同一处(如 dating14 有 10 个);连点这一堆 → 轮流触发,让重叠的点都能点到
+function pickZone(ev){
+  const cv=player.canvas,r=cv.getBoundingClientRect(),cam=player.sceneRenderer.camera,W=cv.clientWidth,H=cv.clientHeight;
+  const px=ev.clientX-r.left, py=ev.clientY-r.top, arr=[];
+  for(const e of curEntries()){ const z=zoneWorld(e); if(!z) continue;
+    const c=cam.worldToScreen(new spine.Vector3(z.x,z.y,0),W,H); if(!isFinite(c.x)) continue;
+    arr.push({e,d:(px-c.x)*(px-c.x)+(py-c.y)*(py-c.y)}); }
+  if(!arr.length) return null; arr.sort((a,b)=>a.d-b.d);
+  const near=arr.filter(a=>a.d<=arr[0].d+400);   // 最近点 + 其 ~20px 内的算作同一堆重叠点
+  if(near.length<=1){ stackKey=null; return arr[0].e; }
+  const key=near.map(a=>a.e.group+"_"+a.e.id).sort().join(","); if(key!==stackKey){ stackKey=key; stackIdx=0; }
+  const e=near[stackIdx%near.length].e; stackIdx++; return e;   // 同一堆:连点轮流
+}
+function onPress(ev){ const e=pickZone(ev); if(!e) return; if(isDragZone(e)) startHold(e); else fire(e); }
 function startHold(e){
   heldZone=e; heldStart=performance.now();
   try{ if(player.paused&&player.play) player.play(); }catch(_){}
