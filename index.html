@@ -34,7 +34,7 @@
 <script src="spine-player.js"></script>
 <script>
 const $=s=>document.querySelector(s);
-let player, skeleton, state, config=[], scenes=[], cur=null, curGroup=1, showZones=true, dragMode=false, manualCam=null, boneNames=[], userZoom=1, userPanX=0, userPanY=0, pinch=null, listenersReady=false, clickCounts={}, revealed=null, revealTimer=null;
+let player, skeleton, state, config=[], scenes=[], cur=null, curGroup=1, showZones=true, dragMode=false, manualCam=null, boneNames=[], userZoom=1, userPanX=0, userPanY=0, pinch=null, listenersReady=false, clickCounts={}, revealed=null, revealTimer=null, hideUntilRevealed=new Set();
 
 fetch('manifest.json').then(r=>r.json()).then(m=>{
   scenes=m;
@@ -146,6 +146,9 @@ function onReady(p){
     e._plays=[...new Set(src.map(resolve).filter(Boolean))];
     if(!e._plays.length && e._anim) e._plays=[e._anim];
   }
+  // "解锁前隐藏"的点集:凡是被某个触发点 reveals 的,默认藏起来,点了触发点才启用(还原游戏的隐藏点机制)
+  hideUntilRevealed=new Set();
+  for(const e of config) if(e.reveals) for(const gi of e.reveals) hideUntilRevealed.add(gi);
   const groups=[...new Set(config.filter(c=>c._plays&&c._plays.length).map(c=>c.group))].sort((a,b)=>a-b);
   $("#groups").innerHTML=groups.map(g=>`<button data-g="${g}" class="${g===1?'on':''}">${g}</button>`).join('');
   $("#groups").onclick=e=>{const b=e.target.closest('button'); if(b) setGroup(+b.dataset.g);};
@@ -165,8 +168,12 @@ function findPointBone(g,id,kind){
 function zoneWorld(e){ const b=findPointBone(e.group,e.id,e.kind); if(!b) return null;
   return {x:b.worldX,y:b.worldY,w:(e.rect&&e.rect.w)||150,h:(e.rect&&e.rect.h)||150}; }
 function animated(e){ return e._plays && e._plays.length; }
+function isOnScreen(e){ const b=findPointBone(e.group,e.id,e.kind); if(!b||!player) return false;
+  const cam=player.sceneRenderer.camera,pc=player.canvas,s=cam.worldToScreen(new spine.Vector3(b.worldX,b.worldY,0),pc.clientWidth,pc.clientHeight);
+  return isFinite(s.x)&&s.x>=0&&s.x<=pc.clientWidth&&s.y>=0&&s.y<=pc.clientHeight; }
 function curEntries(){
-  return config.filter(e=>animated(e) && e.group===curGroup && (dragMode ? isDragZone(e) : !isDragZone(e)));  // 默认:点触点(含带变体的);勾选:只看渐进拖拽
+  if(revealed){ const r=config.filter(e=>animated(e)&&revealed.has(e.group+"_"+e.id)); if(r.length) return r; }   // 解锁后:只显示被解锁的隐藏点
+  return config.filter(e=>animated(e) && e.group===curGroup && (dragMode?isDragZone(e):!isDragZone(e)) && !hideUntilRevealed.has(e.group+"_"+e.id));  // 默认:点触点,且排除"未解锁的隐藏点"
 }
 function nearestZone(ev){
   const cv=player.canvas,r=cv.getBoundingClientRect(),cam=player.sceneRenderer.camera,W=cv.clientWidth,H=cv.clientHeight;
@@ -215,10 +222,13 @@ function fire(e){
 }
 // 解锁隐藏点:临时只显示被解锁的那几个点(其余禁用),几秒后恢复
 function triggerReveal(e){
-  revealed=new Set(e.reveals);
-  $("#hud").textContent=`✨ 解锁隐藏点:${e.reveals.join(' / ')}`;
+  // 只启用画面内的被解锁点(画外的没法点);启用后进入"聚焦"—只这些可点,几秒后恢复(还原 disableAllAnotherPoint + durationTime)
+  const ons=e.reveals.filter(gi=>{const p=gi.split('_'),t=config.find(x=>x.group==+p[0]&&x.id==+p[1]&&animated(x)); return t&&isOnScreen(t);});
+  if(!ons.length){ $("#hud").textContent="✨ 触发隐藏点(在画面外,可缩小/拖动找)"; return; }
+  revealed=new Set(ons);
+  $("#hud").textContent=`✨ 解锁隐藏互动!点亮的金框(约 3 秒)`;
   clearTimeout(revealTimer);
-  revealTimer=setTimeout(()=>{ revealed=null; $("#hud").textContent="点立绘不同部位触发反应"; }, 7000);
+  revealTimer=setTimeout(()=>{ revealed=null; $("#hud").textContent="点立绘不同部位触发反应"; }, 3500);
 }
 // 推进状态:该交互动画播完 → 切到下一个 group(不同状态有不同 idle + 互动)
 function advanceState(from, anim){
