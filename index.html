@@ -82,21 +82,27 @@ function ensureListeners(){
   }
   const D=t=>Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
   const M=t=>({x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2});
+  // 屏幕点 → 世界坐标(按当前相机)
+  const s2w=(cx,cy)=>{ const cam=player.sceneRenderer.camera,cv=player.canvas,r=cv.getBoundingClientRect();
+    const wpp=cam.zoom*(cam.viewportWidth/cv.clientWidth), ox=(cx-r.left)-cv.clientWidth/2, oy=(cy-r.top)-cv.clientHeight/2;
+    return {x:cam.position.x+ox*wpp, y:cam.position.y-oy*wpp}; };
+  // 缩放到 nz,并让世界点 wp 保持落在屏幕点(cx,cy)下 → 绕手指/光标锚定缩放(而非绕画面中心,否则内容从手指下溜走)
+  const anchorZoom=(nz,wp,cx,cy)=>{ if(!manualCam) return; userZoom=Math.min(6,Math.max(0.5,nz));
+    const cam=player.sceneRenderer.camera,cv=player.canvas,r=cv.getBoundingClientRect();
+    const ncz=Math.max(manualCam.w/cam.viewportWidth,manualCam.h/cam.viewportHeight)*1.12/userZoom;
+    const wpp=ncz*(cam.viewportWidth/cv.clientWidth), ox=(cx-r.left)-cv.clientWidth/2, oy=(cy-r.top)-cv.clientHeight/2;
+    userPanX=(wp.x-ox*wpp)-manualCam.cx; userPanY=(wp.y+oy*wpp)-manualCam.cy; };
   stage.addEventListener('touchstart', e=>{
-    if(e.touches.length===2){ e.preventDefault(); const m=M(e.touches);
-      pinch={d:D(e.touches), z:userZoom, mx:m.x, my:m.y, px:userPanX, py:userPanY}; }
+    if(e.touches.length===2 && player && manualCam){ e.preventDefault(); const m=M(e.touches);
+      pinch={d:D(e.touches), z:userZoom, wp:s2w(m.x,m.y)}; }   // 记住捏合中点的世界坐标
   }, {passive:false});
   stage.addEventListener('touchmove', e=>{
-    if(pinch && e.touches.length===2 && player){ e.preventDefault();
-      const m=M(e.touches), cam=player.sceneRenderer.camera;
-      userZoom=Math.min(6, Math.max(0.5, pinch.z*D(e.touches)/pinch.d));   // 捏合缩放
-      const wpp=cam.zoom*(cam.viewportWidth/player.canvas.clientWidth);
-      userPanX=pinch.px-(m.x-pinch.mx)*wpp; userPanY=pinch.py+(m.y-pinch.my)*wpp;   // 双指拖动
-    }
+    if(pinch && e.touches.length===2 && player){ e.preventDefault(); const m=M(e.touches);
+      anchorZoom(pinch.z*D(e.touches)/pinch.d, pinch.wp, m.x, m.y); }   // 绕捏合点缩放 + 双指拖动跟手
   }, {passive:false});
   stage.addEventListener('touchend', e=>{ if(e.touches.length<2) pinch=null; });
-  stage.addEventListener('wheel', e=>{ e.preventDefault();   // 桌面滚轮缩放
-    userZoom=Math.min(6, Math.max(0.5, userZoom*(e.deltaY<0?1.1:0.9))); }, {passive:false});
+  stage.addEventListener('wheel', e=>{ e.preventDefault();   // 桌面滚轮:绕光标缩放
+    if(player&&manualCam) anchorZoom(userZoom*(e.deltaY<0?1.1:0.9), s2w(e.clientX,e.clientY), e.clientX, e.clientY); }, {passive:false});
   const rb=$("#reset"); if(rb) rb.onclick=resetView;
 }
 function combineSkin(anim){
