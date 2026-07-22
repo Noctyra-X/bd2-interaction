@@ -23,7 +23,7 @@
     <select id="scene"></select>
     <span id="groups"></span>
     <label class="tg"><input type="checkbox" id="showzones" checked>区</label>
-    <label class="tg"><input type="checkbox" id="dragmode">拖拽</label>
+    <label class="tg"><input type="checkbox" id="dragmode">拖拽渐进</label>
     <button id="reset" style="padding:5px 10px;border-radius:7px;border:1px solid #2e2e42;background:transparent;color:#9a9ab0;font-size:12px">复位</button>
   </div>
   <div id="stage">
@@ -34,7 +34,7 @@
 <script src="spine-player.js"></script>
 <script>
 const $=s=>document.querySelector(s);
-let player, skeleton, state, config=[], scenes=[], cur=null, curGroup=1, showZones=true, dragMode=false, manualCam=null, boneNames=[], userZoom=1, userPanX=0, userPanY=0, pinch=null, listenersReady=false;
+let player, skeleton, state, config=[], scenes=[], cur=null, curGroup=1, showZones=true, dragMode=false, manualCam=null, boneNames=[], userZoom=1, userPanX=0, userPanY=0, pinch=null, listenersReady=false, clickCounts={}, revealed=null, revealTimer=null;
 
 fetch('manifest.json').then(r=>r.json()).then(m=>{
   scenes=m;
@@ -48,7 +48,7 @@ $("#dragmode").onchange=e=>dragMode=e.target.checked;
 function loadScene(n){
   cur=scenes.find(s=>s.n===n); if(!cur) return;
   $("#hud").textContent="加载中…"; $("#last").textContent="";
-  manualCam=null; curGroup=1; userZoom=1; userPanX=0; userPanY=0; pinch=null;
+  manualCam=null; curGroup=1; userZoom=1; userPanX=0; userPanY=0; pinch=null; clickCounts={}; revealed=null; clearTimeout(revealTimer);
   if(player){ try{player.dispose();}catch(e){} player=null; }
   $("#player").innerHTML="";
   fetch(cur.config).then(r=>r.json()).then(c=>{ config=c; makePlayer(); });
@@ -128,7 +128,7 @@ function robustViewport(animName){
   return (X0<=X1)?{x:X0,y:Y0,w:X1-X0,h:Y1-Y0}:null;
 }
 function setGroup(g){
-  curGroup=g; const data=skeleton.data, idle="idle"+g;
+  curGroup=g; revealed=null; const data=skeleton.data, idle="idle"+g;
   const useIdle=data.findAnimation(idle)?idle:(data.findAnimation("idle1")?"idle1":data.animations[0].name);
   combineSkin(useIdle);
   const vp=robustViewport(useIdle); if(vp) manualCam={cx:vp.x+vp.w/2,cy:vp.y+vp.h/2,w:vp.w,h:vp.h};
@@ -140,10 +140,13 @@ function onReady(p){
   // 把配置的 mix{g}_{id} 解析成真实动画名(带 _1/_2 后缀);没有对应动画的区域标记为不可用
   const _anims=skeleton.data.animations;
   const resolve=nm=>{ if(!nm) return null; const a=_anims.find(x=>x.name===nm)||_anims.find(x=>x.name===nm+"_1")||_anims.find(x=>x.name.startsWith(nm+"_")); return a?a.name:null; };
-  for(const e of config){   // mix{g}_{id} + 拖拽/长按的 loop/success/fail 全解析成真实动画名(带 _1 等后缀)
+  for(const e of config){   // 解析真实动画名:_plays=权威列表(点多次/随机切不同的);另有拖拽的 loop/success/fail
     e._anim=resolve(e.anim); e._loop=resolve(e.loop); e._success=resolve(e.success); e._fail=resolve(e.fail);
+    const src=(e.plays&&e.plays.length)?e.plays:[e.anim];
+    e._plays=[...new Set(src.map(resolve).filter(Boolean))];
+    if(!e._plays.length && e._anim) e._plays=[e._anim];
   }
-  const groups=[...new Set(config.filter(c=>c._anim).map(c=>c.group))].sort((a,b)=>a-b);
+  const groups=[...new Set(config.filter(c=>c._plays&&c._plays.length).map(c=>c.group))].sort((a,b)=>a-b);
   $("#groups").innerHTML=groups.map(g=>`<button data-g="${g}" class="${g===1?'on':''}">${g}</button>`).join('');
   $("#groups").onclick=e=>{const b=e.target.closest('button'); if(b) setGroup(+b.dataset.g);};
   setGroup(1);
@@ -161,18 +164,22 @@ function findPointBone(g,id,kind){
 }
 function zoneWorld(e){ const b=findPointBone(e.group,e.id,e.kind); if(!b) return null;
   return {x:b.worldX,y:b.worldY,w:(e.rect&&e.rect.w)||150,h:(e.rect&&e.rect.h)||150}; }
-function curEntries(){ return config.filter(e=>e._anim && e.group===curGroup && (dragMode?e.kind==='drag':e.kind==='touch')); }
+function animated(e){ return e._plays && e._plays.length; }
+function curEntries(){
+  return config.filter(e=>animated(e) && e.group===curGroup && (dragMode ? isDragZone(e) : !isDragZone(e)));  // 默认:点触点(含带变体的);勾选:只看渐进拖拽
+}
 function nearestZone(ev){
-  const cv=player.canvas,r=cv.getBoundingClientRect(),cam=player.sceneRenderer.camera;
-  const w=cam.screenToWorld(new spine.Vector3(ev.clientX-r.left,ev.clientY-r.top,0),cv.clientWidth,cv.clientHeight);
+  const cv=player.canvas,r=cv.getBoundingClientRect(),cam=player.sceneRenderer.camera,W=cv.clientWidth,H=cv.clientHeight;
+  const px=ev.clientX-r.left, py=ev.clientY-r.top;
   let best=null,bd=Infinity;
   for(const e of curEntries()){ const z=zoneWorld(e); if(!z) continue;
-    const d=(w.x-z.x)*(w.x-z.x)+(w.y-z.y)*(w.y-z.y); if(d<bd){bd=d;best=e;} }  // 点哪就触发最近的
+    const c=cam.worldToScreen(new spine.Vector3(z.x,z.y,0),W,H); if(!isFinite(c.x)) continue;   // 在屏幕空间比(和画框同一变换),点哪命中哪
+    const d=(px-c.x)*(px-c.x)+(py-c.y)*(py-c.y); if(d<bd){bd=d;best=e;} }
   return best;
 }
 // 点触:点一下播 mix 反应。拖拽/长按:按住时循环播 loop(动画随按住持续渐进),松手够 hold 秒→success(完成,如脱丝袜),太早松→fail
 let heldZone=null, heldStart=0;
-function isDragZone(e){ return e.kind==='drag' || e.action===1 || !!e._loop || !!e._success; }
+function isDragZone(e){ return !!(e._loop || e._success); }   // 只有真·渐进拖拽(有 loop/success,如 dating18)才走"按住"流程;其余走 fire() 点触循环
 function idleName(g){ const n="idle"+g; return skeleton.data.findAnimation(n)?n:"idle1"; }
 function onPress(ev){ const e=nearestZone(ev); if(!e) return; if(isDragZone(e)) startHold(e); else fire(e); }
 function startHold(e){
@@ -192,12 +199,34 @@ function onRelease(){
   else { state.setAnimation(0,idleName(e.group),true); state.setEmptyAnimation(1,0.15); $("#last").textContent="(回到待机)"; }
 }
 function fire(e){
-  const data=skeleton.data, idle="idle"+e.group, useIdle=data.findAnimation(idle)?idle:"idle1";
-  if(e._anim){
-    try{ if(player.paused && player.play) player.play(); }catch(_){}   // 确保没被暂停
-    state.setAnimation(0,useIdle,true); state.setAnimation(1,e._anim,false);
-    $("#last").textContent=`▶ ${e._anim} · 组${e.group} ${e.kind}`; window.__lastAnim=e._anim; }
-  else { $("#last").textContent=`(无反应)`; window.__lastAnim=null; }
+  const plays=(e._plays&&e._plays.length)?e._plays:(e._anim?[e._anim]:[]);
+  if(!plays.length){ $("#last").textContent=`(无反应)`; window.__lastAnim=null; return; }
+  const key=e.group+"_"+e.id+"_"+e.kind;
+  let idx;
+  if(e.rand){ idx=Math.floor(Math.random()*plays.length); }                                    // 随机播一个
+  else { idx=(clickCounts[key]||0)%plays.length; clickCounts[key]=(clickCounts[key]||0)+1; }    // 同一处连点→循环切不同的
+  const anim=plays[idx];
+  try{ if(player.paused && player.play) player.play(); }catch(_){}
+  state.setAnimation(0,idleName(e.group),true); state.setAnimation(1,anim,false);
+  const tag=plays.length>1?` (${idx+1}/${plays.length}${e.rand?' 随机':''})`:"";
+  $("#last").textContent=`▶ ${anim}${tag} · 组${e.group}`; window.__lastAnim=anim;
+  if(e.reveals && e.reveals.length) triggerReveal(e);     // 点这里→解锁隐藏点(触发"事件",出现新互动)
+  if(e.nextState) advanceState(e.group, anim);            // 交互结束→推进到下一状态
+}
+// 解锁隐藏点:临时只显示被解锁的那几个点(其余禁用),几秒后恢复
+function triggerReveal(e){
+  revealed=new Set(e.reveals);
+  $("#hud").textContent=`✨ 解锁隐藏点:${e.reveals.join(' / ')}`;
+  clearTimeout(revealTimer);
+  revealTimer=setTimeout(()=>{ revealed=null; $("#hud").textContent="点立绘不同部位触发反应"; }, 7000);
+}
+// 推进状态:该交互动画播完 → 切到下一个 group(不同状态有不同 idle + 互动)
+function advanceState(from, anim){
+  const gs=[...new Set(config.filter(animated).map(c=>c.group))].sort((a,b)=>a-b);
+  const next=gs[gs.indexOf(from)+1]; if(next==null) return;
+  const dur=(skeleton.data.findAnimation(anim)||{}).duration||1;
+  setTimeout(()=>{ if(curGroup===from){ setGroup(next); $("#hud").textContent=`→ 进入状态 ${next}`;
+    setTimeout(()=>{ if(!revealed) $("#hud").textContent="点立绘不同部位触发反应"; }, 1600); } }, dur*1000+150);
 }
 function loop(){
   const cv=$("#overlay"),st=$("#stage"); if(cv.width!==st.clientWidth) cv.width=st.clientWidth; if(cv.height!==st.clientHeight) cv.height=st.clientHeight;
@@ -208,7 +237,9 @@ function loop(){
       const c=cam.worldToScreen(new spine.Vector3(z.x,z.y,0),W,H); if(!isFinite(c.x)) continue;
       const c2=cam.worldToScreen(new spine.Vector3(z.x+z.w/2,z.y+z.h/2,0),W,H);
       const sw=Math.abs(c2.x-c.x)*2,sh=Math.abs(c2.y-c.y)*2;
-      ctx.strokeStyle='rgba(0,211,194,.5)';ctx.lineWidth=1.3;ctx.strokeRect(c.x-sw/2,c.y-sh/2,sw,sh);
+      const hot=revealed&&revealed.has(e.group+"_"+e.id);   // 被解锁的隐藏点高亮金框
+      ctx.strokeStyle=hot?'rgba(255,210,80,.98)':(dragMode?'rgba(255,160,60,.6)':'rgba(0,211,194,.5)');
+      ctx.lineWidth=hot?2.5:1.3; ctx.strokeRect(c.x-sw/2,c.y-sh/2,sw,sh);
     }
   }
   requestAnimationFrame(loop);

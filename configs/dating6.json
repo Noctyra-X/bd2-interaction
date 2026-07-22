@@ -12,12 +12,21 @@
    "h": 300.0
   },
   "bone": "point1_1_drag",
+  "plays": [
+   "mix1_1_1",
+   "mix1_1_2"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 1,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 1,
@@ -32,12 +41,21 @@
    "h": 150.0
   },
   "bone": "point1_6_drag",
+  "plays": [
+   "mix1_6_1",
+   "mix1_6_2"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 1,
   "action": 1,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 2,
@@ -52,12 +70,21 @@
    "h": 200.0
   },
   "bone": "point2_3_drag",
+  "plays": [
+   "mix2_3_1",
+   "mix2_2_2"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 1,
   "action": 1,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 3,
@@ -72,12 +99,21 @@
    "h": 600.0
   },
   "bone": "point3_3_drag",
+  "plays": [
+   "mix3_3_1",
+   "mix3_2_2"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 1,
   "action": 1,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 4,
@@ -92,12 +128,21 @@
    "h": 500.0
   },
   "bone": "point4_2_drag",
+  "plays": [
+   "mix4_2_1",
+   "mix4_2_2"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 1,
   "action": 1,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -112,12 +157,21 @@
    "h": 200.0
   },
   "bone": "point6_1_drag",
+  "plays": [
+   "mix6_1_1",
+   "mix6_1_2"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 1,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -132,12 +186,21 @@
    "h": 200.0
   },
   "bone": "point6_9_drag",
+  "plays": [
+   "mix6_9_1",
+   "mix6_9_2"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 1,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -152,12 +215,21 @@
    "h": 200.0
   },
   "bone": "point6_10_drag",
+  "plays": [
+   "mix6_10_1",
+   "mix6_10_2"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 1,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 1,
@@ -172,12 +244,20 @@
    "h": 300.0
   },
   "bone": "point1_2_touch",
+  "plays": [
+   "mix1_2_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 1,
@@ -192,12 +272,20 @@
    "h": 250.0
   },
   "bone": "point1_3_touch",
+  "plays": [
+   "mix1_3_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 1,
@@ -212,12 +300,20 @@
    "h": 300.0
   },
   "bone": "point1_4_touch",
+  "plays": [
+   "mix1_4_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 1,
@@ -232,12 +328,20 @@
    "h": 300.0
   },
   "bone": "point1_5_touch",
+  "plays": [
+   "mix1_5_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 2,
@@ -252,12 +356,24 @@
    "h": 5000.0
   },
   "bone": "point2_1_touch",
+  "plays": [
+   "mix2_1_1",
+   "mix2_1_1",
+   "mix2_1_1",
+   "mix2_1_1",
+   "mix2_1_end"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 2,
@@ -272,12 +388,20 @@
    "h": 200.0
   },
   "bone": "point2_2_touch",
+  "plays": [
+   "mix2_2_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 3,
@@ -292,12 +416,24 @@
    "h": 5000.0
   },
   "bone": "point3_1_touch",
+  "plays": [
+   "mix3_1_1",
+   "mix3_1_1",
+   "mix3_1_1",
+   "mix3_1_1",
+   "mix3_1_end"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 3,
@@ -312,12 +448,20 @@
    "h": 600.0
   },
   "bone": "point3_2_touch",
+  "plays": [
+   "mix3_2_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 4,
@@ -332,12 +476,24 @@
    "h": 2000.0
   },
   "bone": "point4_1_touch",
+  "plays": [
+   "mix4_1_1",
+   "mix4_1_1",
+   "mix4_1_1",
+   "mix4_1_1",
+   "mix4_1_end"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 5,
@@ -352,12 +508,24 @@
    "h": 2000.0
   },
   "bone": "point5_1_touch",
+  "plays": [
+   "mix5_1_1",
+   "mix5_1_1",
+   "mix5_1_1",
+   "mix5_1_1",
+   "mix5_1_end"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 5,
@@ -372,12 +540,20 @@
    "h": 300.0
   },
   "bone": "point5_2_touch",
+  "plays": [
+   "mix5_2_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 1,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -392,12 +568,20 @@
    "h": 200.0
   },
   "bone": "point6_2_touch",
+  "plays": [
+   "mix6_2_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -412,12 +596,20 @@
    "h": 200.0
   },
   "bone": "point6_3_touch",
+  "plays": [
+   "mix6_3_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -432,12 +624,20 @@
    "h": 200.0
   },
   "bone": "point6_4_touch",
+  "plays": [
+   "mix6_4_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -452,12 +652,20 @@
    "h": 200.0
   },
   "bone": "point6_5_touch",
+  "plays": [
+   "mix6_5_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -472,12 +680,20 @@
    "h": 200.0
   },
   "bone": "point6_6_touch",
+  "plays": [
+   "mix6_6_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -492,12 +708,20 @@
    "h": 200.0
   },
   "bone": "point6_7_touch",
+  "plays": [
+   "mix6_7_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -512,12 +736,20 @@
    "h": 200.0
   },
   "bone": "point6_8_touch",
+  "plays": [
+   "mix6_8_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -532,12 +764,20 @@
    "h": 350.0
   },
   "bone": "point6_11_touch",
+  "plays": [
+   "mix6_11_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -552,12 +792,20 @@
    "h": 350.0
   },
   "bone": "point6_12_touch",
+  "plays": [
+   "mix6_12_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -572,12 +820,20 @@
    "h": 350.0
   },
   "bone": "point6_13_touch",
+  "plays": [
+   "mix6_13_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -592,12 +848,20 @@
    "h": 300.0
   },
   "bone": "point6_14_touch",
+  "plays": [
+   "mix6_14_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -612,12 +876,20 @@
    "h": 250.0
   },
   "bone": "point6_15_touch",
+  "plays": [
+   "mix6_15_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -632,12 +904,20 @@
    "h": 300.0
   },
   "bone": "point6_16_touch",
+  "plays": [
+   "mix6_16_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -652,12 +932,20 @@
    "h": 300.0
   },
   "bone": "point6_17_touch",
+  "plays": [
+   "mix6_17_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -672,12 +960,20 @@
    "h": 300.0
   },
   "bone": "point6_18_touch",
+  "plays": [
+   "mix6_18_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -692,12 +988,20 @@
    "h": 400.0
   },
   "bone": "point6_19_touch",
+  "plays": [
+   "mix6_19_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -712,12 +1016,20 @@
    "h": 300.0
   },
   "bone": "point6_20_touch",
+  "plays": [
+   "mix6_20_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -732,12 +1044,20 @@
    "h": 400.0
   },
   "bone": "point6_21_touch",
+  "plays": [
+   "mix6_21_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -752,12 +1072,20 @@
    "h": 300.0
   },
   "bone": "point6_22_touch",
+  "plays": [
+   "mix6_22_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -772,12 +1100,20 @@
    "h": 400.0
   },
   "bone": "point6_23_touch",
+  "plays": [
+   "mix6_23_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -792,12 +1128,20 @@
    "h": 300.0
   },
   "bone": "point6_24_touch",
+  "plays": [
+   "mix6_24_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -812,12 +1156,20 @@
    "h": 300.0
   },
   "bone": "point6_25_touch",
+  "plays": [
+   "mix6_25_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -832,12 +1184,20 @@
    "h": 200.0
   },
   "bone": "point6_26_touch",
+  "plays": [
+   "mix6_26_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -852,12 +1212,20 @@
    "h": 300.0
   },
   "bone": "point6_27_touch",
+  "plays": [
+   "mix6_27_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -872,12 +1240,20 @@
    "h": 200.0
   },
   "bone": "point6_28_touch",
+  "plays": [
+   "mix6_28_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -892,12 +1268,20 @@
    "h": 300.0
   },
   "bone": "point6_29_touch",
+  "plays": [
+   "mix6_29_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -912,12 +1296,20 @@
    "h": 300.0
   },
   "bone": "point6_30_touch",
+  "plays": [
+   "mix6_30_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -932,12 +1324,20 @@
    "h": 300.0
   },
   "bone": "point6_31_touch",
+  "plays": [
+   "mix6_31_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -952,12 +1352,20 @@
    "h": 300.0
   },
   "bone": "point6_32_touch",
+  "plays": [
+   "mix6_32_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  },
  {
   "group": 6,
@@ -972,11 +1380,19 @@
    "h": 500.0
   },
   "bone": "point6_33_touch",
+  "plays": [
+   "mix6_33_1"
+  ],
+  "clickMax": 0,
+  "rand": 0,
+  "nextState": 0,
   "action": 0,
   "loop": null,
   "success": null,
   "fail": null,
   "hold": 0,
-  "gauge": 0
+  "gauge": 0,
+  "reveals": [],
+  "disableOthers": 0
  }
 ]
