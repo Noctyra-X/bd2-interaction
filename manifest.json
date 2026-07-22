@@ -1,0 +1,154 @@
+[
+ {
+  "n": 1,
+  "char": "Nebris",
+  "costume": "New Hire",
+  "skel": "assets/illust_dating1.skel",
+  "atlas": "assets/illust_dating1.atlas",
+  "config": "configs/dating1.json"
+ },
+ {
+  "n": 2,
+  "char": "Morpeah",
+  "costume": "Daydream Bunny",
+  "skel": "assets/illust_dating2.skel",
+  "atlas": "assets/illust_dating2.atlas",
+  "config": "configs/dating2.json"
+ },
+ {
+  "n": 3,
+  "char": "Loen",
+  "costume": "Celebrity Bunny",
+  "skel": "assets/illust_dating3.skel",
+  "atlas": "assets/illust_dating3.atlas",
+  "config": "configs/dating3.json"
+ },
+ {
+  "n": 4,
+  "char": "Teresse",
+  "costume": "Medical Club",
+  "skel": "assets/illust_dating4.skel",
+  "atlas": "assets/illust_dating4.atlas",
+  "config": "configs/dating4.json"
+ },
+ {
+  "n": 5,
+  "char": "Elise",
+  "costume": "Code Name O",
+  "skel": "assets/illust_dating5.skel",
+  "atlas": "assets/illust_dating5.atlas",
+  "config": "configs/dating5.json"
+ },
+ {
+  "n": 6,
+  "char": "Wilhelmina",
+  "costume": "Water Park Queen",
+  "skel": "assets/illust_dating6.skel",
+  "atlas": "assets/illust_dating6.atlas",
+  "config": "configs/dating6.json"
+ },
+ {
+  "n": 7,
+  "char": "Justia",
+  "costume": "Hot Summer Dream",
+  "skel": "assets/illust_dating7.skel",
+  "atlas": "assets/illust_dating7.atlas",
+  "config": "configs/dating7.json"
+ },
+ {
+  "n": 8,
+  "char": "Sylvia",
+  "costume": "Bikini Agent",
+  "skel": "assets/illust_dating8.skel",
+  "atlas": "assets/illust_dating8.atlas",
+  "config": "configs/dating8.json"
+ },
+ {
+  "n": 9,
+  "char": "Teresse",
+  "costume": "Milky Bikini",
+  "skel": "assets/illust_dating9.skel",
+  "atlas": "assets/illust_dating9.atlas",
+  "config": "configs/dating9.json"
+ },
+ {
+  "n": 10,
+  "char": "Angelica",
+  "costume": "Neon Savior",
+  "skel": "assets/illust_dating10.skel",
+  "atlas": "assets/illust_dating10.atlas",
+  "config": "configs/dating10.json"
+ },
+ {
+  "n": 11,
+  "char": "Eclipse",
+  "costume": "Nightmare Bunny",
+  "skel": "assets/illust_dating11.skel",
+  "atlas": "assets/illust_dating11.atlas",
+  "config": "configs/dating11.json"
+ },
+ {
+  "n": 12,
+  "char": "Zenith",
+  "costume": "Stranger Bunny",
+  "skel": "assets/illust_dating12.skel",
+  "atlas": "assets/illust_dating12.atlas",
+  "config": "configs/dating12.json"
+ },
+ {
+  "n": 13,
+  "char": "Tyr",
+  "costume": "Innocent Bunny",
+  "skel": "assets/illust_dating13.skel",
+  "atlas": "assets/illust_dating13.atlas",
+  "config": "configs/dating13.json"
+ },
+ {
+  "n": 14,
+  "char": "Liberta",
+  "costume": "Hedonist",
+  "skel": "assets/illust_dating14.skel",
+  "atlas": "assets/illust_dating14.atlas",
+  "config": "configs/dating14.json"
+ },
+ {
+  "n": 15,
+  "char": "Ventana",
+  "costume": "Onsen Practitioner",
+  "skel": "assets/illust_dating15.skel",
+  "atlas": "assets/illust_dating15.atlas",
+  "config": "configs/dating15.json"
+ },
+ {
+  "n": 16,
+  "char": "Olivier",
+  "costume": "Retired Legend",
+  "skel": "assets/illust_dating16.skel",
+  "atlas": "assets/illust_dating16.atlas",
+  "config": "configs/dating16.json"
+ },
+ {
+  "n": 17,
+  "char": "Palette",
+  "costume": "Miracle Violet",
+  "skel": "assets/illust_dating17.skel",
+  "atlas": "assets/illust_dating17.atlas",
+  "config": "configs/dating17.json"
+ },
+ {
+  "n": 18,
+  "char": "Scheherazade",
+  "costume": "Deliberate Ace",
+  "skel": "assets/illust_dating18.skel",
+  "atlas": "assets/illust_dating18.atlas",
+  "config": "configs/dating18.json"
+ },
+ {
+  "n": 19,
+  "char": "Granhildr",
+  "costume": "Combat Medic",
+  "skel": "assets/illust_dating19.skel",
+  "atlas": "assets/illust_dating19.atlas",
+  "config": "configs/dating19.json"
+ }
+]

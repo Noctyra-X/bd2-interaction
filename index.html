@@ -1,0 +1,152 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="spine-player.css">
+<title>BD2 互动</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:#0f0f16;color:#e8e8f2;font-family:system-ui,"Microsoft YaHei",sans-serif;overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100vh}
+  #bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 10px;background:#1b1b27;border-bottom:1px solid #2e2e42;font-size:13px}
+  #scene{flex:1;min-width:150px;max-width:100%;padding:8px;background:#242435;color:#e8e8f2;border:1px solid #2e2e42;border-radius:8px;font-size:14px}
+  #groups{display:flex;gap:5px;flex-wrap:wrap}
+  #groups button{width:30px;height:30px;border-radius:7px;border:1px solid #2e2e42;background:transparent;color:#9a9ab0;font-size:13px}
+  #groups button.on{background:#7b5cff;color:#fff;border-color:#7b5cff}
+  .tg{display:flex;align-items:center;gap:4px;color:#9a9ab0}
+  #stage{flex:1;position:relative;overflow:hidden;touch-action:none}
+  #player{position:absolute;inset:0}
+  #overlay{position:absolute;inset:0;pointer-events:none}
+  #last{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.6);padding:6px 12px;border-radius:8px;color:#ffcf6b;font-size:14px;min-height:16px}
+  #hud{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.5);padding:5px 10px;border-radius:7px;color:#8a8aa2;font-size:12px}
+</style></head><body>
+<div id="app">
+  <div id="bar">
+    <select id="scene"></select>
+    <span id="groups"></span>
+    <label class="tg"><input type="checkbox" id="showzones" checked>区</label>
+    <label class="tg"><input type="checkbox" id="dragmode">drag</label>
+  </div>
+  <div id="stage">
+    <div id="player"></div><canvas id="overlay"></canvas>
+    <div id="hud">选场景后点立绘不同部位</div><div id="last"></div>
+  </div>
+</div>
+<script src="spine-player.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+let player, skeleton, state, config=[], scenes=[], cur=null, curGroup=1, showZones=true, dragMode=false, manualCam=null, boneNames=[];
+
+fetch('manifest.json').then(r=>r.json()).then(m=>{
+  scenes=m;
+  $("#scene").innerHTML=m.map(s=>`<option value="${s.n}">${s.char} · ${s.costume}</option>`).join('');
+  $("#scene").onchange=()=>loadScene(+$("#scene").value);
+  loadScene(m[0].n);
+});
+$("#showzones").onchange=e=>showZones=e.target.checked;
+$("#dragmode").onchange=e=>dragMode=e.target.checked;
+
+function loadScene(n){
+  cur=scenes.find(s=>s.n===n); if(!cur) return;
+  $("#hud").textContent="加载中…"; $("#last").textContent="";
+  manualCam=null; curGroup=1;
+  if(player){ try{player.dispose();}catch(e){} player=null; }
+  $("#player").innerHTML="";
+  fetch(cur.config).then(r=>r.json()).then(c=>{ config=c; makePlayer(); });
+}
+function makePlayer(){
+  player=new spine.SpinePlayer("player",{
+    skelUrl:cur.skel, atlasUrl:cur.atlas, premultipliedAlpha:false, alpha:false,
+    backgroundColor:"#12121a", showControls:false,
+    success:onReady, update:onUpdate, error:(p,m)=>{ $("#hud").textContent="加载失败:"+m; }
+  });
+}
+function onUpdate(){
+  if(!manualCam||!player||!player.sceneRenderer) return;
+  const cam=player.sceneRenderer.camera, vw=cam.viewportWidth||1, vh=cam.viewportHeight||1;
+  cam.zoom=Math.max(manualCam.w/vw, manualCam.h/vh)*1.12;
+  cam.position.x=manualCam.cx; cam.position.y=manualCam.cy; cam.position.z=0; cam.update();
+}
+function combineSkin(anim){
+  const data=skeleton.data, base=(anim.match(/^[a-zA-Z]+[0-9]*/)||[anim])[0];
+  const named=data.skins.filter(s=>s.name!=='default'); if(!named.length) return;
+  let matched=named.filter(s=>s.name.indexOf(base)===0); if(!matched.length) matched=named;
+  const sk=new spine.Skin('__c'); const def=data.findSkin('default'); if(def) sk.addSkin(def);
+  for(const s of matched) sk.addSkin(s); skeleton.setSkin(sk); skeleton.setSlotsToSetupPose();
+}
+function robustViewport(animName){
+  const data=skeleton.data, anim=data.findAnimation(animName), dur=anim?anim.duration:0;
+  const wv=new Array(8192); let X0=1e18,Y0=1e18,X1=-1e18,Y1=-1e18;
+  const times=dur>0?[0,.25,.5,.75].map(f=>f*dur):[0];
+  for(const t of times){
+    skeleton.setToSetupPose(); state.clearTracks(); state.setAnimation(0,animName,false);
+    state.tracks[0].trackTime=t; state.apply(skeleton); skeleton.updateWorldTransform();
+    for(const slot of skeleton.slots){
+      const at=slot.getAttachment&&slot.getAttachment(); if(!at) continue; let n=0;
+      if(at instanceof spine.RegionAttachment){at.computeWorldVertices(slot,wv,0,2);n=8;}
+      else if(at instanceof spine.MeshAttachment){at.computeWorldVertices(slot,0,at.worldVerticesLength,wv,0,2);n=at.worldVerticesLength;}
+      else continue;
+      let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
+      for(let i=0;i<n;i+=2){const x=wv[i],y=wv[i+1];if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+      const w=x1-x0,h=y1-y0,cx=(x0+x1)/2,cy=(y0+y1)/2;
+      if(w>15000||h>15000||Math.abs(cx)>20000||Math.abs(cy)>20000) continue;
+      X0=Math.min(X0,x0);X1=Math.max(X1,x1);Y0=Math.min(Y0,y0);Y1=Math.max(Y1,y1);
+    }
+  }
+  return (X0<=X1)?{x:X0,y:Y0,w:X1-X0,h:Y1-Y0}:null;
+}
+function setGroup(g){
+  curGroup=g; const data=skeleton.data, idle="idle"+g;
+  const useIdle=data.findAnimation(idle)?idle:(data.findAnimation("idle1")?"idle1":data.animations[0].name);
+  combineSkin(useIdle);
+  const vp=robustViewport(useIdle); if(vp) manualCam={cx:vp.x+vp.w/2,cy:vp.y+vp.h/2,w:vp.w,h:vp.h};
+  state.clearTracks(); skeleton.setToSetupPose(); state.setAnimation(0,useIdle,true);
+  document.querySelectorAll('#groups button').forEach(b=>b.classList.toggle('on',+b.dataset.g===g));
+}
+function onReady(p){
+  skeleton=p.skeleton; state=p.animationState; boneNames=skeleton.data.bones.map(b=>b.name);
+  const groups=[...new Set(config.map(c=>c.group))].sort((a,b)=>a-b);
+  $("#groups").innerHTML=groups.map(g=>`<button data-g="${g}" class="${g===1?'on':''}">${g}</button>`).join('');
+  $("#groups").onclick=e=>{const b=e.target.closest('button'); if(b) setGroup(+b.dataset.g);};
+  setGroup(1);
+  $("#hud").textContent="点立绘不同部位触发反应";
+  p.canvas.style.cursor='pointer';
+  p.canvas.addEventListener('pointerdown', onTap);
+  requestAnimationFrame(loop);
+}
+function findPointBone(g,id,kind){
+  let b=skeleton.findBone(`point${g}_${id}_${kind}`); if(b) return b;
+  const pfx=`point${g}_${id}`, cands=boneNames.filter(n=>n===pfx||n.startsWith(pfx+"_"));
+  const pick=cands.find(n=>n.includes(kind))||cands.find(n=>n.includes("follow"))||cands[0];
+  return pick?skeleton.findBone(pick):null;
+}
+function zoneWorld(e){ const b=findPointBone(e.group,e.id,e.kind); if(!b) return null;
+  return {x:b.worldX,y:b.worldY,w:(e.rect&&e.rect.w)||150,h:(e.rect&&e.rect.h)||150}; }
+function curEntries(){ return config.filter(e=>e.group===curGroup && (dragMode?e.kind==='drag':e.kind==='touch')); }
+function onTap(ev){
+  const cv=player.canvas,r=cv.getBoundingClientRect(),cam=player.sceneRenderer.camera;
+  const w=cam.screenToWorld(new spine.Vector3(ev.clientX-r.left,ev.clientY-r.top,0),cv.clientWidth,cv.clientHeight);
+  let best=null,ba=Infinity;
+  for(const e of curEntries()){ const z=zoneWorld(e); if(!z) continue;
+    if(Math.abs(w.x-z.x)<=z.w/2 && Math.abs(w.y-z.y)<=z.h/2){ const a=z.w*z.h; if(a<ba){ba=a;best=e;} } }
+  if(best) fire(best);
+}
+function fire(e){
+  const idle="idle"+e.group, data=skeleton.data, useIdle=data.findAnimation(idle)?idle:"idle1";
+  if(data.findAnimation(e.anim)){ state.setAnimation(0,useIdle,true); state.setAnimation(1,e.anim,false);
+    $("#last").textContent=`▶ ${e.anim} · 组${e.group} ${e.kind}`; }
+  else $("#last").textContent=`(无 ${e.anim})`;
+}
+function loop(){
+  const cv=$("#overlay"),st=$("#stage"); if(cv.width!==st.clientWidth) cv.width=st.clientWidth; if(cv.height!==st.clientHeight) cv.height=st.clientHeight;
+  const ctx=cv.getContext('2d'); ctx.clearRect(0,0,cv.width,cv.height);
+  if(showZones&&skeleton&&player){
+    const cam=player.sceneRenderer.camera,pc=player.canvas,W=pc.clientWidth,H=pc.clientHeight;
+    for(const e of curEntries()){ const z=zoneWorld(e); if(!z) continue;
+      const c=cam.worldToScreen(new spine.Vector3(z.x,z.y,0),W,H); if(!isFinite(c.x)) continue;
+      const c2=cam.worldToScreen(new spine.Vector3(z.x+z.w/2,z.y+z.h/2,0),W,H);
+      const sw=Math.abs(c2.x-c.x)*2,sh=Math.abs(c2.y-c.y)*2;
+      ctx.strokeStyle='rgba(0,211,194,.5)';ctx.lineWidth=1.3;ctx.strokeRect(c.x-sw/2,c.y-sh/2,sw,sh);
+    }
+  }
+  requestAnimationFrame(loop);
+}
+</script></body></html>
